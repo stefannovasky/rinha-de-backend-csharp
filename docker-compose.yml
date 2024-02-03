@@ -1,11 +1,10 @@
 version: "3.9"
+
 services:
   api-1:
     image: rinha
     build:
       dockerfile: ./Dockerfile
-    # expose:
-    #   - "80"
     ports:
       - "8081:8080"
     hostname: api-1
@@ -15,7 +14,9 @@ services:
       resources:
         limits:
           cpus: "0.25"
-          memory: "0.7GB"
+          memory: "0.6GB"
+    depends_on:
+      - postgres-db
     networks:
       - rinha-network
 
@@ -23,8 +24,6 @@ services:
     image: rinha
     build:
       dockerfile: ./Dockerfile
-    # expose:
-    #   - "80"
     ports:
       - "8082:8080"
     hostname: api-2
@@ -34,7 +33,33 @@ services:
       resources:
         limits:
           cpus: "0.25"
-          memory: "0.7GB"
+          memory: "0.6GB"
+    depends_on:
+      - postgres-db
+    networks:
+      - rinha-network
+
+  postgres-db:
+    image: "postgres:latest"
+    hostname: postgres-db
+    deploy:
+      resources:
+        limits:
+          cpus: "0.7"
+          memory: "1.3GB"
+    ports:
+      - "5432:5432"
+    volumes:
+      - .:/var/lib/postgresql
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: rinha-db
+    # healthcheck:
+    #   test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+    #   interval: 5s
+    #   timeout: 5s
+    #   retries: 3
     networks:
       - rinha-network
 
@@ -45,13 +70,14 @@ services:
     depends_on:
       - api-1
       - api-2
+      - postgres-db
     ports:
       - "9999:9999"
     deploy:
       resources:
         limits:
-          cpus: "0.25"
-          memory: "0.25GB"
+          cpus: "0.3"
+          memory: "0.5GB"
     networks:
       - rinha-network
 
