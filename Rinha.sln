@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.8.34525.116
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rinha.Web", ".\src\Rinha.Web\Rinha.Web.csproj", "{807DE1CA-02B1-4F54-947E-CF186489A5EA}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{807DE1CA-02B1-4F54-947E-CF186489A5EA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{807DE1CA-02B1-4F54-947E-CF186489A5EA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{807DE1CA-02B1-4F54-947E-CF186489A5EA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{807DE1CA-02B1-4F54-947E-CF186489A5EA}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {4F3B88A5-9D09-4A88-8169-5A74D79B3DDA}
+	EndGlobalSection
+EndGlobal
