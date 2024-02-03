@@ -4,11 +4,57 @@ services:
     image: rinha
     build:
       dockerfile: ./Dockerfile
+    # expose:
+    #   - "80"
     ports:
       - "8081:8080"
+    hostname: api-1
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: "0.7GB"
+    networks:
+      - rinha-network
+
   api-2:
     image: rinha
     build:
       dockerfile: ./Dockerfile
+    # expose:
+    #   - "80"
     ports:
       - "8082:8080"
+    hostname: api-2
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: "0.7GB"
+    networks:
+      - rinha-network
+
+  nginx:
+    image: nginx:latest
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - api-1
+      - api-2
+    ports:
+      - "9999:9999"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: "0.25GB"
+    networks:
+      - rinha-network
+
+networks:
+  rinha-network:
+    driver: bridge
