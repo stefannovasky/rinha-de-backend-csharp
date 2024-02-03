@@ -1,0 +1,14 @@
+version: "3.9"
+services:
+  api-1:
+    image: rinha
+    build:
+      dockerfile: ./Dockerfile
+    ports:
+      - "8081:8080"
+  api-2:
+    image: rinha
+    build:
+      dockerfile: ./Dockerfile
+    ports:
+      - "8082:8080"
