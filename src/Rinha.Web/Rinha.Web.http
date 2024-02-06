@@ -1,6 +1,0 @@
-@Rinha.Web_HostAddress = http://localhost:5144
-
-GET {{Rinha.Web_HostAddress}}/weatherforecast/
-Accept: application/json
-
-###
