@@ -1,5 +1,7 @@
+using Microsoft.AspNetCore.Mvc;
 using Npgsql;
 
+// sem criticancia
 var connString = "Host=postgres-db;Username=root;Password=root;Database=rinha-db";
 
 var builder = WebApplication.CreateBuilder(args);
@@ -17,25 +19,29 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-app.MapGet("/", async (ILogger<Program> logger) =>
+app.MapPost("/clientes/{id}/transacoes", async (
+    [FromRoute] int id,
+    [FromBody] CriarTransacao transacao) =>
 {
-    await using var dataSource = NpgsqlDataSource.Create(connString);
-    await using var connection = await dataSource.OpenConnectionAsync();
-
-    var sqlCommand = "SELECT FLOOR(RANDOM()*(1000 - 1 + 1)) + 1 As random_val;";
-    await using var command = new NpgsqlCommand(sqlCommand, connection);
-    await using var reader = await command.ExecuteReaderAsync();
-
-    string result = "";
-    while (await reader.ReadAsync())
+    if (!transacao.EhValido())
     {
-        result = reader.GetFloat(0).ToString();
+        return Results.StatusCode(422);
     }
 
-    logger.LogInformation("received request");
-    return new { Result = result };
-})
-.WithName("GetWeatherForecast")
-.WithOpenApi();
+    await using var dataSource = NpgsqlDataSource.Create(connString);
+    await using var conn = await dataSource.OpenConnectionAsync();
+
+    await using var command = new NpgsqlCommand("select 1 from clientes c where c.id = @Id", conn);
+    command.Parameters.AddWithValue("Id", id);
+    await using var reader = await command.ExecuteReaderAsync();
+
+    var clienteExiste = await reader.ReadAsync();
+    if (!clienteExiste)
+    {
+        return Results.NotFound();
+    }
+
+    return Results.Ok(new { id = id });
+});
 
 app.Run();
