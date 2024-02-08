@@ -33,7 +33,7 @@ BEGIN
 	if cliente_novo_saldo is null then return; end if;
 
 	insert into transacoes (cliente_id, valor, tipo, descricao)
-	values (cliente_id, valor_transacao, tipo_transacao, descricao_transacao);
+	values (cliente_id, abs(valor_transacao), tipo_transacao, descricao_transacao);
 
 	return query select cliente_novo_saldo, cliente_limite;
 END;
