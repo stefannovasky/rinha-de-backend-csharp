@@ -1,24 +1,26 @@
+using System.Text.Json;
+
 public record CriarTransacao
 {
-    public string Valor { get; set; }
+    public JsonElement Valor { get; set; }
     public string Tipo { get; set; }
     public string Descricao { get; set; }
 
     public bool EhValido()
     {
-        if (Valor == null || Tipo == null || Descricao == null)
+        if (Valor.ValueKind == JsonValueKind.Null || Tipo == null || Descricao == null)
         {
             return false;
         }
 
-        var valorEhUmInteiro = int.TryParse(Valor, out int valor);
-        if (!valorEhUmInteiro)
+        var valorEhInteiro = Valor.TryGetInt32(out int valor);
+        if (!valorEhInteiro)
         {
             return false;
         }
 
-        var valorEhPositivo = valor > 0;
-        if (!valorEhPositivo)
+        var valorEhNegativo = valor < 1;
+        if (valorEhNegativo)
         {
             return false;
         }
