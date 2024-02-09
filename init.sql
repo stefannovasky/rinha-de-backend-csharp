@@ -20,24 +20,51 @@ CREATE INDEX ix_transacoes_cliente_id ON transacoes (cliente_id);
 
 CREATE TYPE resultado_transacao as (cliente_novo_saldo integer, cliente_limite integer);
 
-CREATE FUNCTION criar_transacao(cliente_id INTEGER, valor_transacao INTEGER, tipo_transacao TEXT, descricao_transacao TEXT)
+CREATE FUNCTION debito(cliente_id INTEGER, valor_transacao INTEGER, descricao_transacao TEXT)
 RETURNS SETOF resultado_transacao
 LANGUAGE plpgsql
 AS $BODY$
 	DECLARE cliente_novo_saldo INTEGER;
   DECLARE cliente_limite INTEGER;
 BEGIN
-	update clientes
-	set saldo = saldo + valor_transacao
-	where id = cliente_id and saldo + valor_transacao >= (-limite)
-	returning saldo, limite into cliente_novo_saldo, cliente_limite;
+	SELECT
+		saldo - valor_transacao,
+		limite
+	INTO cliente_novo_saldo, cliente_limite
+	FROM clientes
+	WHERE id = cliente_id;
 
-	if cliente_novo_saldo is null then return; end if;
+	IF cliente_novo_saldo < (-cliente_limite) THEN RETURN; END IF;
 
-	insert into transacoes (cliente_id, valor, tipo, descricao)
-	values (cliente_id, abs(valor_transacao), tipo_transacao, descricao_transacao);
+	UPDATE clientes
+	SET saldo = cliente_novo_saldo
+	WHERE id = cliente_id
+	returning saldo, limite
+	INTO cliente_novo_saldo, cliente_limite;
 
-	return query select cliente_novo_saldo, cliente_limite;
+	INSERT INTO transacoes (cliente_id, valor, tipo, descricao)
+	VALUES (cliente_id, valor_transacao, 'd', descricao_transacao);
+
+	RETURN query SELECT cliente_novo_saldo, cliente_limite;
+END;
+$BODY$;
+
+CREATE FUNCTION credito(cliente_id INTEGER, valor_transacao INTEGER, descricao_transacao TEXT)
+RETURNS SETOF resultado_transacao
+LANGUAGE plpgsql
+AS $BODY$
+	DECLARE cliente_novo_saldo INTEGER;
+  DECLARE cliente_limite INTEGER;
+BEGIN
+	UPDATE clientes
+	SET saldo = saldo + valor_transacao
+	WHERE id = cliente_id
+	returning saldo, limite INTO cliente_novo_saldo, cliente_limite;
+
+	INSERT INTO transacoes (cliente_id, valor, tipo, descricao)
+	VALUES (cliente_id, valor_transacao, 'c', descricao_transacao);
+
+	RETURN query SELECT cliente_novo_saldo, cliente_limite;
 END;
 $BODY$;
 

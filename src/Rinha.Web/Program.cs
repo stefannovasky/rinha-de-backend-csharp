@@ -7,7 +7,7 @@ using System.Text.Json.Serialization;
 // sem criticancia
 var connString = "Host=postgres-db;Username=root;Password=root;Database=rinha-db;MaxPoolSize=30;MinPoolSize=5;Connection Pruning Interval=1;Connection Idle Lifetime=2;Enlist=false;No Reset On Close=true;Pooling=true";
 
-var builder = WebApplication.CreateBuilder(args);
+var builder = WebApplication.CreateSlimBuilder(args);
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -43,14 +43,13 @@ app.MapPost("/clientes/{id}/transacoes", async (
     using var conn = new NpgsqlConnection(connString);
     await conn.OpenAsync();
 
-    var valorTransacao = transacaoValidada!.Tipo == "c" ? transacaoValidada.Valor : -transacaoValidada.Valor;
-
-    var sql = "select * from criar_transacao(@ClienteId, @ValorTransacao, @TipoTransacao, @DescricaoTransacao);";
+    var nomeProcedure = transacaoValidada!.Tipo == "c" ? "credito" : "debito";
+    var sql = $"select * from {nomeProcedure}(@ClienteId, @TipoTransacao, @DescricaoTransacao);";
     await using var command = new NpgsqlCommand(sql, conn);
     command.Parameters.AddWithValue("ClienteId", id);
-    command.Parameters.AddWithValue("ValorTransacao", valorTransacao);
     command.Parameters.AddWithValue("TipoTransacao", transacaoValidada.Tipo);
     command.Parameters.AddWithValue("DescricaoTransacao", transacaoValidada.Descricao);
+
     await using var reader = await command.ExecuteReaderAsync();
 
     var transacaoTeveSucesso = await reader.ReadAsync();
