@@ -44,7 +44,7 @@ public record CriarTransacaoRequest
     }
 }
 
-public record CriarTransacaoResponse 
+public record CriarTransacaoResponse
 {
     [JsonPropertyName("limite")]
     public int Limite { get; set; }
