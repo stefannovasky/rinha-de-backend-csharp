@@ -80,7 +80,7 @@ services:
       POSTGRES_DB: rinha-db
 
     # se quer apelar, use: postgres -c 'max_connections=30' 'fsync=off' -c 'synchronous_commit=off' -c 'checkpoint_timeout=1d' -c 'full_page_writes=false'
-    command: postgres -c 'max_connections=300'
+    command: postgres -c 'max_connections=400'
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U root -d rinha-db" ]
       interval: 5s
