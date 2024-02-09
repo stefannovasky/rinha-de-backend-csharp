@@ -69,8 +69,8 @@ END;
 $BODY$;
 
 INSERT INTO clientes (nome, limite) values
-	('eles brigam', 1000 * 100),
-	('por instinto', 800 * 100),
-	('nós criamos', 10000 * 100),
-	('por amor', 100000 * 100),
-	('rinha de galo frases', 5000 * 100);
+	('eh', 1000 * 100),
+	('os', 800 * 100),
+	('guri', 10000 * 100),
+	('nao tem', 100000 * 100),
+	('jeito', 5000 * 100);
