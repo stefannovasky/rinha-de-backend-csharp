@@ -37,7 +37,7 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.15"
+          cpus: "0.45"
           memory: "100MB"
     depends_on:
       postgres-db:
@@ -57,7 +57,7 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.3"
+          cpus: "0.1"
           memory: "100MB"
     networks:
       - rinha-network
@@ -68,7 +68,7 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.45"
+          cpus: "0.5"
           memory: "140MB"
     ports:
       - "5432:5432"
@@ -80,7 +80,7 @@ services:
       POSTGRES_DB: rinha-db
 
     # se quer apelar, use: postgres -c 'max_connections=30' 'fsync=off' -c 'synchronous_commit=off' -c 'checkpoint_timeout=1d' -c 'full_page_writes=false'
-    command: postgres -c 'max_connections=30'
+    command: postgres -c 'max_connections=300'
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U root -d rinha-db" ]
       interval: 5s
