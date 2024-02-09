@@ -20,8 +20,6 @@ var app = builder.Build();
 
 var cache = new ConcurrentDictionary<int, int>(); // provavelmente o cache menos adequado do mundo 
 
-SetarClientesNoCache(app);
-
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -51,8 +49,6 @@ app.MapPost("/clientes/{id}/transacoes", async (
         await using var clienteExisteReader = await clienteExisteCommand.ExecuteReaderAsync();
         if (!await clienteExisteReader.ReadAsync())
         {
-            await clienteExisteReader.CloseAsync();
-            await conn.CloseAsync();
             return Results.NotFound();
         }
         await clienteExisteReader.CloseAsync();
@@ -72,16 +68,12 @@ app.MapPost("/clientes/{id}/transacoes", async (
     var transacaoTeveSucesso = await criarTransacaoReader.ReadAsync();
     if (!transacaoTeveSucesso)
     {
-        await criarTransacaoReader.CloseAsync();
-        await conn.CloseAsync();
         return Results.UnprocessableEntity();
     }
 
     var novoSaldo = criarTransacaoReader.GetInt32(0);
     var limite = criarTransacaoReader.GetInt32(1);
 
-    await criarTransacaoReader.CloseAsync();
-    await conn.CloseAsync();
     return Results.Ok(new CriarTransacaoResponse { Limite = limite, Saldo = novoSaldo });
 });
 
@@ -99,8 +91,6 @@ app.MapGet("/clientes/{id}/extrato", async ([FromRoute] int id) =>
         await using var clienteExisteReader = await clienteExisteCommand.ExecuteReaderAsync();
         if (!await clienteExisteReader.ReadAsync())
         {
-            await clienteExisteReader.CloseAsync();
-            await conn.CloseAsync();
             return Results.NotFound();
         }
         await clienteExisteReader.CloseAsync();
@@ -115,7 +105,7 @@ app.MapGet("/clientes/{id}/extrato", async ([FromRoute] int id) =>
     buscarSaldoClienteCommand.Parameters.AddWithValue("ClienteId", id);
 
     await using var readerSaldoCliente = await buscarSaldoClienteCommand.ExecuteReaderAsync();
-    var existeSaldoCliente = await readerSaldoCliente.ReadAsync();
+    await readerSaldoCliente.ReadAsync();
     var saldoCliente = new ExtratoSaldoDto
     {
         Total = readerSaldoCliente.GetInt32(0),
@@ -124,12 +114,12 @@ app.MapGet("/clientes/{id}/extrato", async ([FromRoute] int id) =>
     };
     await readerSaldoCliente.CloseAsync();
 
+    var transacoes = new List<TransacaoDto>();
     await using var buscarTransacoesCommand = new NpgsqlCommand(
         "select valor, tipo, descricao, realizada_em from transacoes where cliente_id = @ClienteId order by realizada_em desc limit 10",
         conn);
     buscarTransacoesCommand.Parameters.AddWithValue("ClienteId", id);
     await using var buscarTransacoesReader = await buscarTransacoesCommand.ExecuteReaderAsync();
-    var transacoes = new List<TransacaoDto>();
     while (await buscarTransacoesReader.ReadAsync())
     {
         transacoes.Add(new TransacaoDto
@@ -140,7 +130,6 @@ app.MapGet("/clientes/{id}/extrato", async ([FromRoute] int id) =>
             RealizadaEm = buscarTransacoesReader.GetDateTime(3),
         });
     }
-    await conn.CloseAsync();
 
     var resultado = new BuscarExtratoResponse
     {
@@ -151,26 +140,6 @@ app.MapGet("/clientes/{id}/extrato", async ([FromRoute] int id) =>
 });
 
 app.Run();
-
-async void SetarClientesNoCache(IHost app)
-{
-    // fiquei com peso na consciencia de verificar se o cliente existe apenas verificando se o ID é maior que 5
-    // entao pelo menos coloquei um cache usando ConcurrentDictionary para o peso na consciencia ficar menor
-
-    var conn = new NpgsqlConnection(connString);
-    conn.Open();
-    using var buscarClientesCommand = new NpgsqlCommand("SELECT id FROM clientes", conn);
-    using var reader = buscarClientesCommand.ExecuteReader();
-    while (reader.Read())
-    {
-        var id = reader.GetInt32(0);
-        cache.TryAdd(id, id);
-    }
-    reader.Close();
-    conn.Close();
-
-    Console.WriteLine("clientes foram salvos no cache :)");
-}
 
 [JsonSerializable(typeof(BuscarExtratoResponse))]
 [JsonSerializable(typeof(CriarTransacaoResponse))]
