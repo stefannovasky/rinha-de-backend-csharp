@@ -5,7 +5,7 @@ using System.Collections.Concurrent;
 using System.Text.Json.Serialization;
 
 // sem criticancia
-var connString = "Host=postgres-db;Username=root;Password=root;Database=rinha-db;MaxPoolSize=30;MinPoolSize=5;Connection Pruning Interval=1;Connection Idle Lifetime=2;Enlist=false;No Reset On Close=true;Pooling=true";
+var connString = Environment.GetEnvironmentVariable("POSTGRESQL_CONNECTION_STRING")!.ToString();
 
 var builder = WebApplication.CreateSlimBuilder(args);
 
