@@ -2,7 +2,6 @@ using Microsoft.AspNetCore.Mvc;
 using Npgsql;
 using Rinha.Web;
 using System.Collections.Concurrent;
-using System.Text.Json.Serialization;
 
 // sem criticancia
 var connString = Environment.GetEnvironmentVariable("POSTGRESQL_CONNECTION_STRING")!.ToString();
@@ -14,7 +13,7 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-var cache = new ConcurrentDictionary<int, int>(); // provavelmente o cache menos adequado do mundo 
+var cache = new ConcurrentBag<int>(); // provavelmente o cache menos adequado do mundo 
 
 SetarClientesNoCache(app);
 
@@ -28,7 +27,7 @@ app.MapPost("/clientes/{id}/transacoes", async (
     [FromRoute] int id,
     [FromBody] CriarTransacaoRequest transacao) =>
 {
-    var clienteExiste = cache.ContainsKey(id);
+    var clienteExiste = cache.Contains(id);
     if (!clienteExiste)
     {
         return Results.NotFound();
@@ -70,7 +69,7 @@ app.MapPost("/clientes/{id}/transacoes", async (
 
 app.MapGet("/clientes/{id}/extrato", async ([FromRoute] int id) =>
 {
-    var clienteExiste = cache.ContainsKey(id);
+    var clienteExiste = cache.Contains(id);
     if (!clienteExiste)
     {
         return Results.NotFound();
@@ -134,7 +133,7 @@ async void SetarClientesNoCache(IHost app)
     while (reader.Read())
     {
         var id = reader.GetInt32(0);
-        cache.TryAdd(id, id);
+        cache.Add(id);
     }
     reader.Close();
     conn.Close();
