@@ -7,7 +7,9 @@ EXPOSE 8080
 EXPOSE 8081
 
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
-ARG BUILD_CONFIGURATION=Release
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends \
+  clang zlib1g-dev
 WORKDIR /src
 COPY ["./src", "."]
 RUN dotnet restore "./Rinha.Web/Rinha.Web.csproj"
@@ -16,10 +18,10 @@ RUN dotnet restore "./Rinha.Web/Rinha.Web.csproj"
 RUN dotnet build "./Rinha.Web/Rinha.Web.csproj" -c Release -o /app/build
 
 FROM build AS publish
-ARG BUILD_CONFIGURATION=Release
-RUN dotnet publish "./Rinha.Web/Rinha.Web.csproj" -c Release -o /app/publish /p:UseAppHost=false
+RUN dotnet publish "./Rinha.Web/Rinha.Web.csproj" -c Release -o /app/publish /p:UseAppHost=true
 
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
-ENTRYPOINT ["dotnet", "Rinha.Web.dll"]
+ENV POSTGRESQL_CONNECTION_STRING="Host=postgres-db;Username=root;Password=root;Database=rinha-db;MaxPoolSize=30;MinPoolSize=5;Connection Pruning Interval=1;Connection Idle Lifetime=2;Enlist=false;No Reset On Close=true;Pooling=true"
+ENTRYPOINT ["./Rinha.Web"]

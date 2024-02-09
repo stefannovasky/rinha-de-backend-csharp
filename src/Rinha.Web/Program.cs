@@ -2,11 +2,16 @@ using Microsoft.AspNetCore.Mvc;
 using Npgsql;
 using Rinha.Web;
 using System.Collections.Concurrent;
+using System.Text.Json.Serialization;
 
-// sem criticancia
 var connString = Environment.GetEnvironmentVariable("POSTGRESQL_CONNECTION_STRING")!.ToString();
 
 var builder = WebApplication.CreateSlimBuilder(args);
+
+builder.Services.ConfigureHttpJsonOptions(options =>
+{
+    options.SerializerOptions.TypeInfoResolverChain.Insert(0, AppJsonSerializerContext.Default);
+});
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -140,3 +145,8 @@ async void SetarClientesNoCache(IHost app)
 
     Console.WriteLine("clientes foram salvos no cache :)");
 }
+
+[JsonSerializable(typeof(BuscarExtratoResponse))]
+[JsonSerializable(typeof(CriarTransacaoResponse))]
+[JsonSerializable(typeof(CriarTransacaoRequest))]
+internal partial class AppJsonSerializerContext : JsonSerializerContext { }

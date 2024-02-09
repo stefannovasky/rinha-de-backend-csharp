@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
@@ -7,7 +7,10 @@
     <InvariantGlobalization>true</InvariantGlobalization>
     <UserSecretsId>c44d7319-aa65-4372-a668-e39cd41219aa</UserSecretsId>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
-  </PropertyGroup>
+	<PublishAot>true</PublishAot>
+	<EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+	<OptimizationPreference>Speed</OptimizationPreference>
+</PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.1" />
