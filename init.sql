@@ -1,11 +1,11 @@
-CREATE TABLE clientes (
+CREATE UNLOGGED TABLE clientes (
 	id SERIAL PRIMARY KEY,
 	nome VARCHAR(50) NOT NULL, -- nem precisa mas ta aí
 	limite INTEGER NOT NULL,
 	saldo INTEGER NOT NULL DEFAULT 0
 );
 
-CREATE TABLE transacoes (
+CREATE UNLOGGED TABLE transacoes (
 	id SERIAL PRIMARY KEY,
 	cliente_id INTEGER NOT NULL,
 	valor INTEGER NOT NULL,
@@ -15,6 +15,8 @@ CREATE TABLE transacoes (
 	CONSTRAINT fk_clientes_transacoes_id
 		FOREIGN KEY (cliente_id) REFERENCES clientes(id)
 );
+
+CREATE INDEX ix_transacoes_cliente_id ON transacoes (cliente_id);
 
 CREATE TYPE resultado_transacao as (cliente_novo_saldo integer, cliente_limite integer);
 
