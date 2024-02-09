@@ -16,7 +16,7 @@ CREATE UNLOGGED TABLE transacoes (
 		FOREIGN KEY (cliente_id) REFERENCES clientes(id)
 );
 
-CREATE INDEX ix_transacoes_cliente_id ON transacoes (cliente_id);
+CREATE INDEX ix_transacoes_cliente_id_realizada_em ON transacoes (cliente_id, realizada_em DESC);
 
 CREATE TYPE resultado_transacao as (cliente_novo_saldo integer, cliente_limite integer);
 
