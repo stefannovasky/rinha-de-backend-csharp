@@ -16,7 +16,7 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.45"
+          cpus: "0.4"
           memory: "100MB"
     depends_on:
       postgres-db:
@@ -39,7 +39,7 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.45"
+          cpus: "0.4"
           memory: "100MB"
     depends_on:
       postgres-db:
@@ -70,7 +70,7 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.5"
+          cpus: "0.6"
           memory: "250MB"
     ports:
       - "5432:5432"
