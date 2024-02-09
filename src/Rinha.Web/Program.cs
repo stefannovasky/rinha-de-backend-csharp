@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Caching.Memory;
 using Npgsql;
+using Rinha.Web;
+using System.Collections.Concurrent;
 using System.Text.Json.Serialization;
 
 // sem criticancia
@@ -10,9 +11,10 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-builder.Services.AddMemoryCache();
 
 var app = builder.Build();
+
+var cache = new ConcurrentDictionary<int, int>(); // nao faça o que estou fazendo em PROD
 
 SetarClientesNoCache(app);
 
@@ -23,11 +25,10 @@ if (app.Environment.IsDevelopment())
 }
 
 app.MapPost("/clientes/{id}/transacoes", async (
-    [FromServices] IMemoryCache memoryCache,
     [FromRoute] int id,
     [FromBody] CriarTransacaoRequest transacao) =>
 {
-    var clienteExiste = memoryCache.TryGetValue(id, out _);
+    var clienteExiste = cache.ContainsKey(id);
     if (!clienteExiste)
     {
         return Results.NotFound();
@@ -42,14 +43,14 @@ app.MapPost("/clientes/{id}/transacoes", async (
     using var conn = new NpgsqlConnection(connString);
     await conn.OpenAsync();
 
-    var valorTransacao = transacao.Tipo == "c" ? transacao.Valor.GetInt32() : -transacao.Valor.GetInt32();
+    var valorTransacao = transacaoValidada!.Tipo == "c" ? transacaoValidada.Valor : -transacaoValidada.Valor;
 
     var sql = "select * from criar_transacao(@ClienteId, @ValorTransacao, @TipoTransacao, @DescricaoTransacao);";
     await using var command = new NpgsqlCommand(sql, conn);
     command.Parameters.AddWithValue("ClienteId", id);
     command.Parameters.AddWithValue("ValorTransacao", valorTransacao);
-    command.Parameters.AddWithValue("TipoTransacao", transacao.Tipo);
-    command.Parameters.AddWithValue("DescricaoTransacao", transacao.Descricao);
+    command.Parameters.AddWithValue("TipoTransacao", transacaoValidada.Tipo);
+    command.Parameters.AddWithValue("DescricaoTransacao", transacaoValidada.Descricao);
     await using var reader = await command.ExecuteReaderAsync();
 
     var transacaoTeveSucesso = await reader.ReadAsync();
@@ -68,11 +69,9 @@ app.MapPost("/clientes/{id}/transacoes", async (
     return Results.Ok(new { limite, saldo = novoSaldo });
 });
 
-app.MapGet("/clientes/{id}/extrato", async (
-    [FromServices] IMemoryCache memoryCache,
-    [FromRoute] int id) =>
+app.MapGet("/clientes/{id}/extrato", async ([FromRoute] int id) =>
 {
-    var clienteExiste = memoryCache.TryGetValue(id, out _);
+    var clienteExiste = cache.ContainsKey(id);
     if (!clienteExiste)
     {
         return Results.NotFound();
@@ -127,10 +126,7 @@ app.Run();
 async void SetarClientesNoCache(IHost app)
 {
     // fiquei com peso na consciencia de verificar se o cliente existe apenas verificando se o ID é maior que 5.
-    // entao pelo menos coloquei um cache do brabo
-    // hihi
-
-    var memoryCache = app.Services.GetService<IMemoryCache>()!;
+    // entao pelo menos coloquei um cache usando ConcurrentDictionary para o peso na consciencia ficar menor
 
     var conn = new NpgsqlConnection(connString);
     conn.Open();
@@ -139,10 +135,7 @@ async void SetarClientesNoCache(IHost app)
     while (reader.Read())
     {
         var id = reader.GetInt32(0);
-        memoryCache.Set(id, id, new MemoryCacheEntryOptions
-        {
-            AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5),
-        });
+        cache.TryAdd(id, id);
     }
     reader.Close();
     conn.Close();

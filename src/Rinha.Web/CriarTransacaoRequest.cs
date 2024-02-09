@@ -1,5 +1,6 @@
-using System.Security.Cryptography.Xml;
 using System.Text.Json;
+
+namespace Rinha.Web;
 
 public record CriarTransacaoRequest
 {
@@ -38,7 +39,7 @@ public record CriarTransacaoRequest
             return (false, null);
         }
 
-        return (true, new TransacaoValidada(valor, Descricao, Tipo));
+        return (true, new TransacaoValidada(valor, Tipo, Descricao));
     }
 }
 
