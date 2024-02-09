@@ -1,2 +1,3 @@
 # run
-```docker compose up --build```
+
+```./run.sh```
