@@ -54,7 +54,7 @@ RETURNS SETOF resultado_transacao
 LANGUAGE plpgsql
 AS $BODY$
 	DECLARE cliente_novo_saldo INTEGER;
-  DECLARE cliente_limite INTEGER;
+	DECLARE cliente_limite INTEGER;
 BEGIN
 	UPDATE clientes
 	SET saldo = saldo + valor_transacao
