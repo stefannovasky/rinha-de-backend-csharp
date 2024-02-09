@@ -44,10 +44,10 @@ app.MapPost("/clientes/{id}/transacoes", async (
     await conn.OpenAsync();
 
     var nomeProcedure = transacaoValidada!.Tipo == "c" ? "credito" : "debito";
-    var sql = $"select * from {nomeProcedure}(@ClienteId, @TipoTransacao, @DescricaoTransacao);";
+    var sql = $"select * from {nomeProcedure}(@ClienteId, @ValorTransacao, @DescricaoTransacao);";
     await using var command = new NpgsqlCommand(sql, conn);
     command.Parameters.AddWithValue("ClienteId", id);
-    command.Parameters.AddWithValue("TipoTransacao", transacaoValidada.Tipo);
+    command.Parameters.AddWithValue("ValorTransacao", transacaoValidada.Valor);
     command.Parameters.AddWithValue("DescricaoTransacao", transacaoValidada.Descricao);
 
     await using var reader = await command.ExecuteReaderAsync();
