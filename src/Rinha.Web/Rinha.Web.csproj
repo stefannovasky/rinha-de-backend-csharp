@@ -7,9 +7,9 @@
     <InvariantGlobalization>true</InvariantGlobalization>
     <UserSecretsId>c44d7319-aa65-4372-a668-e39cd41219aa</UserSecretsId>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
-	<PublishAot>true</PublishAot>
-	<EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
-	<OptimizationPreference>Speed</OptimizationPreference>
+	  <PublishAot>true</PublishAot>
+	  <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+	  <OptimizationPreference>Speed</OptimizationPreference>
 </PropertyGroup>
 
   <ItemGroup>
