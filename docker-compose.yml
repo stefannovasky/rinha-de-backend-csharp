@@ -3,12 +3,12 @@ version: "3.9"
 services:
   api-1:
     image: rinha
+    hostname: api-1
     build:
       dockerfile: ./Dockerfile
     container_name: rinha-api-1
     ports:
       - "8081:8080"
-    hostname: api-1
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       - ASPNETCORE_URLS=http://+:8080
@@ -18,18 +18,19 @@ services:
           cpus: "0.45"
           memory: "200MB"
     depends_on:
-      - postgres-db
+      postgres-db:
+        condition: service_healthy
     networks:
       - rinha-network
 
   api-2:
     image: rinha
+    hostname: api-2
     build:
       dockerfile: ./Dockerfile
     container_name: rinha-api-2
     ports:
       - "8082:8080"
-    hostname: api-2
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       - ASPNETCORE_URLS=http://+:8080
@@ -39,7 +40,8 @@ services:
           cpus: "0.15"
           memory: "100MB"
     depends_on:
-      - postgres-db
+      postgres-db:
+        condition: service_healthy
     networks:
       - rinha-network
 
@@ -72,17 +74,16 @@ services:
       - "5432:5432"
     volumes:
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
-      - ./postgresql.conf:/docker-entrypoint-initdb.d/postgresql.conf
     environment:
       POSTGRES_USER: root
       POSTGRES_PASSWORD: root
       POSTGRES_DB: rinha-db
     command: postgres -c 'max_connections=15' -c 'fsync=off' -c 'synchronous_commit=off' -c 'checkpoint_timeout=1d' -c 'full_page_writes=false'
-    # healthcheck:
-    #   test: [ "CMD-SHELL", "pg_isready -U postgres" ]
-    #   interval: 5s
-    #   timeout: 5s
-    #   retries: 3
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U root -d rinha-db" ]
+      interval: 5s
+      timeout: 5s
+      retries: 3
     networks:
       - rinha-network
 
