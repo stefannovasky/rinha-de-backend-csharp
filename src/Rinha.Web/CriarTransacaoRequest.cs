@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace Rinha.Web;
 
@@ -10,7 +11,7 @@ public record CriarTransacaoRequest
 
     public (bool, TransacaoValidada?) Validar()
     {
-        if (Valor.ValueKind == JsonValueKind.Null || Tipo == null || Descricao == null)
+        if (Valor.ValueKind != JsonValueKind.Number || Tipo == null || Descricao == null)
         {
             return (false, null);
         }
@@ -43,4 +44,44 @@ public record CriarTransacaoRequest
     }
 }
 
+public record CriarTransacaoResponse 
+{
+    [JsonPropertyName("limite")]
+    public int Limite { get; set; }
+    [JsonPropertyName("saldo")]
+    public int Saldo { get; set; }
+}
+
 public record TransacaoValidada(int Valor, string Tipo, string Descricao);
+
+
+public record BuscarExtratoResponse
+{
+    [JsonPropertyName("saldo")]
+    public ExtratoSaldoDto Saldo { get; set; }
+    [JsonPropertyName("ultimas_transacoes")]
+    public IList<TransacaoDto> UltimasTransacoes { get; set; }
+}
+
+public record ExtratoSaldoDto
+{
+    [JsonPropertyName("total")]
+    public int Total { get; set; }
+    [JsonPropertyName("data_extrato")]
+    public DateTime DataExtrato { get; set; }
+    [JsonPropertyName("limite")]
+    public int Limite { get; set; }
+}
+
+public record TransacaoDto
+{
+    [JsonPropertyName("valor")]
+    public int Valor { get; set; }
+    [JsonPropertyName("tipo")]
+    public string Tipo { get; set; }
+    [JsonPropertyName("descricao")]
+    public string Descricao { get; set; }
+    [JsonPropertyName("realizada_em")]
+    public DateTime RealizadaEm { get; set; }
+}
+

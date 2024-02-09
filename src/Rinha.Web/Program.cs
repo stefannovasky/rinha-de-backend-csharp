@@ -14,7 +14,7 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-var cache = new ConcurrentDictionary<int, int>(); // nao faça o que estou fazendo em PROD
+var cache = new ConcurrentDictionary<int, int>(); // provavelmente o cache menos adequado do mundo 
 
 SetarClientesNoCache(app);
 
@@ -61,12 +61,12 @@ app.MapPost("/clientes/{id}/transacoes", async (
         return Results.UnprocessableEntity();
     }
 
-    var novoSaldo = reader["cliente_novo_saldo"];
-    var limite = reader["cliente_limite"];
+    var novoSaldo = reader.GetInt32(0);
+    var limite = reader.GetInt32(1);
 
     await reader.CloseAsync();
     await conn.CloseAsync();
-    return Results.Ok(new { limite, saldo = novoSaldo });
+    return Results.Ok(new CriarTransacaoResponse { Limite = limite, Saldo = novoSaldo });
 });
 
 app.MapGet("/clientes/{id}/extrato", async ([FromRoute] int id) =>
@@ -113,7 +113,7 @@ app.MapGet("/clientes/{id}/extrato", async ([FromRoute] int id) =>
     }
     await conn.CloseAsync();
 
-    var resultado = new ExtratoDto
+    var resultado = new BuscarExtratoResponse
     {
         Saldo = saldoCliente,
         UltimasTransacoes = transacoes
@@ -125,7 +125,7 @@ app.Run();
 
 async void SetarClientesNoCache(IHost app)
 {
-    // fiquei com peso na consciencia de verificar se o cliente existe apenas verificando se o ID é maior que 5.
+    // fiquei com peso na consciencia de verificar se o cliente existe apenas verificando se o ID é maior que 5
     // entao pelo menos coloquei um cache usando ConcurrentDictionary para o peso na consciencia ficar menor
 
     var conn = new NpgsqlConnection(connString);
@@ -141,34 +141,4 @@ async void SetarClientesNoCache(IHost app)
     conn.Close();
 
     Console.WriteLine("clientes foram salvos no cache :)");
-}
-
-public record ExtratoDto
-{
-    [JsonPropertyName("saldo")]
-    public ExtratoSaldoDto Saldo { get; set; }
-    [JsonPropertyName("ultimas_transacoes")]
-    public IList<TransacaoDto> UltimasTransacoes { get; set; }
-}
-
-public record ExtratoSaldoDto
-{
-    [JsonPropertyName("total")]
-    public int Total { get; set; }
-    [JsonPropertyName("data_extrato")]
-    public DateTime DataExtrato { get; set; }
-    [JsonPropertyName("limite")]
-    public int Limite { get; set; }
-}
-
-public record TransacaoDto
-{
-    [JsonPropertyName("valor")]
-    public int Valor { get; set; }
-    [JsonPropertyName("tipo")]
-    public string Tipo { get; set; }
-    [JsonPropertyName("descricao")]
-    public string Descricao { get; set; }
-    [JsonPropertyName("realizada_em")]
-    public DateTime RealizadaEm { get; set; }
 }
