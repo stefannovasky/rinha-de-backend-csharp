@@ -18,7 +18,7 @@ RUN dotnet restore "./Rinha.Web/Rinha.Web.csproj"
 RUN dotnet build "./Rinha.Web/Rinha.Web.csproj" -c Release -o /app/build
 
 FROM build AS publish
-RUN dotnet publish "./Rinha.Web/Rinha.Web.csproj" -c Release -o /app/publish /p:UseAppHost=true
+RUN dotnet publish -r linux-x64 "./Rinha.Web/Rinha.Web.csproj" -c Release -o /app/publish /p:UseAppHost=true
 
 FROM base AS final
 WORKDIR /app
