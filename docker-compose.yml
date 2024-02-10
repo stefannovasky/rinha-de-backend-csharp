@@ -2,10 +2,9 @@ version: "3.9"
 
 services:
   api-1:
-    image: rinha
-    hostname: api-1
     build:
       dockerfile: ./Dockerfile
+    hostname: api-1
     container_name: rinha-api-1
     ports:
       - "8081:8080"
@@ -25,10 +24,9 @@ services:
       - rinha-network
 
   api-2:
-    image: rinha
-    hostname: api-2
     build:
       dockerfile: ./Dockerfile
+    hostname: api-2
     container_name: rinha-api-2
     ports:
       - "8082:8080"
@@ -60,7 +58,7 @@ services:
       resources:
         limits:
           cpus: "0.1"
-          memory: "100MB"
+          memory: "50MB"
     networks:
       - rinha-network
 
@@ -71,7 +69,7 @@ services:
       resources:
         limits:
           cpus: "0.6"
-          memory: "250MB"
+          memory: "300MB"
     ports:
       - "5432:5432"
     volumes:
@@ -81,8 +79,8 @@ services:
       POSTGRES_PASSWORD: root
       POSTGRES_DB: rinha-db
 
-    # se quer apelar, use: postgres -c 'max_connections=400' -c 'fsync=off' -c 'synchronous_commit=off' -c 'checkpoint_timeout=1d' -c 'full_page_writes=false'
-    command: postgres -c 'max_connections=400'
+    # se quer apelar, use: postgres -c 'max_connections=400' -c 'fsync=off' -c 'synchronous_commit=off' -c 'checkpoint_timeout=600' -c 'full_page_writes=false'
+    command: postgres -c 'max_connections=400' -c 'checkpoint_timeout=600'
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U root -d rinha-db" ]
       interval: 5s
