@@ -39,7 +39,7 @@ app.MapPost("/clientes/{id}/transacoes", async (
 
     using var conn = new NpgsqlConnection(connString);
     await conn.OpenAsync();
-
+    
     // validar se o usuario existe 
     if (!cache.ContainsKey(id))
     {
