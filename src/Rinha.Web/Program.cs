@@ -6,6 +6,9 @@ using System.Text.Json.Serialization;
 
 var connString = Environment.GetEnvironmentVariable("POSTGRESQL_CONNECTION_STRING")!.ToString();
 
+// id_cliente -> limite_cliente
+var cache = new ConcurrentDictionary<int, int>(); // provavelmente o cache menos adequado do mundo
+
 var builder = WebApplication.CreateSlimBuilder(args);
 
 builder.Services.ConfigureHttpJsonOptions(options =>
@@ -18,7 +21,6 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-var cache = new ConcurrentDictionary<int, int>(); // provavelmente o cache menos adequado do mundo 
 
 if (app.Environment.IsDevelopment())
 {
@@ -39,26 +41,16 @@ app.MapPost("/clientes/{id}/transacoes", async (
 
     using var conn = new NpgsqlConnection(connString);
     await conn.OpenAsync();
-    
-    // validar se o usuario existe 
-    if (!cache.ContainsKey(id))
+
+    // validar se o usuario existe
+    if (!cache.TryGetValue(id, out int limiteCliente))
     {
-        await using var clienteExisteCommand = new NpgsqlCommand("select 1 from clientes where id = @ClienteId", conn);
-        clienteExisteCommand.Parameters.AddWithValue("ClienteId", id);
-
-        await using var clienteExisteReader = await clienteExisteCommand.ExecuteReaderAsync();
-        if (!await clienteExisteReader.ReadAsync())
-        {
-            return Results.NotFound();
-        }
-        await clienteExisteReader.CloseAsync();
-
-        cache.TryAdd(id, id);
+        return Results.NotFound();
     }
 
-    // fazer a transacao 
-    var nomeProcedure = transacaoValidada!.Tipo == "c" ? "credito" : "debito";
-    var sql = $"select * from {nomeProcedure}(@ClienteId, @ValorTransacao, @DescricaoTransacao);";
+    // fazer a transacao
+    var nomeFuncaoSql = transacaoValidada!.Tipo == "c" ? "credito" : "debito";
+    var sql = $"select * from {nomeFuncaoSql}(@ClienteId, @ValorTransacao, @DescricaoTransacao);";
     await using var command = new NpgsqlCommand(sql, conn);
     command.Parameters.AddWithValue("ClienteId", id);
     command.Parameters.AddWithValue("ValorTransacao", transacaoValidada.Valor);
@@ -72,9 +64,8 @@ app.MapPost("/clientes/{id}/transacoes", async (
     }
 
     var novoSaldo = criarTransacaoReader.GetInt32(0);
-    var limite = criarTransacaoReader.GetInt32(1);
 
-    return Results.Ok(new CriarTransacaoResponse { Limite = limite, Saldo = novoSaldo });
+    return Results.Ok(new CriarTransacaoResponse { Limite = limiteCliente, Saldo = novoSaldo });
 });
 
 app.MapGet("/clientes/{id}/extrato", async ([FromRoute] int id) =>
@@ -82,25 +73,15 @@ app.MapGet("/clientes/{id}/extrato", async ([FromRoute] int id) =>
     using var conn = new NpgsqlConnection(connString);
     await conn.OpenAsync();
 
-    // validar se o usuario existe 
-    if (!cache.ContainsKey(id))
+    // validar se o usuario existe
+    if (!cache.TryGetValue(id, out int limiteCliente))
     {
-        await using var clienteExisteCommand = new NpgsqlCommand("select 1 from clientes where id = @ClienteId", conn);
-        clienteExisteCommand.Parameters.AddWithValue("ClienteId", id);
-
-        await using var clienteExisteReader = await clienteExisteCommand.ExecuteReaderAsync();
-        if (!await clienteExisteReader.ReadAsync())
-        {
-            return Results.NotFound();
-        }
-        await clienteExisteReader.CloseAsync();
-
-        cache.TryAdd(id, id);
+        return Results.NotFound();
     }
 
     // buscar saldo e transacoes
     await using var buscarSaldoClienteCommand = new NpgsqlCommand(
-        "select saldo as total, now() as data_extrato, limite from clientes where id = @ClienteId",
+        "SELECT saldo as total, now() as data_extrato FROM clientes WHERE id = @ClienteId",
         conn);
     buscarSaldoClienteCommand.Parameters.AddWithValue("ClienteId", id);
 
@@ -110,13 +91,13 @@ app.MapGet("/clientes/{id}/extrato", async ([FromRoute] int id) =>
     {
         Total = readerSaldoCliente.GetInt32(0),
         DataExtrato = readerSaldoCliente.GetDateTime(1),
-        Limite = readerSaldoCliente.GetInt32(2)
+        Limite = limiteCliente
     };
     await readerSaldoCliente.CloseAsync();
 
     var transacoes = new List<TransacaoDto>();
     await using var buscarTransacoesCommand = new NpgsqlCommand(
-        "select valor, tipo, descricao, realizada_em from transacoes where cliente_id = @ClienteId order by realizada_em desc limit 10",
+        "SELECT valor, tipo, descricao, realizada_em FROM transacoes WHERE cliente_id = @ClienteId ORDER BY realizada_em DESC LIMIT 10",
         conn);
     buscarTransacoesCommand.Parameters.AddWithValue("ClienteId", id);
     await using var buscarTransacoesReader = await buscarTransacoesCommand.ExecuteReaderAsync();
@@ -131,15 +112,31 @@ app.MapGet("/clientes/{id}/extrato", async ([FromRoute] int id) =>
         });
     }
 
-    var resultado = new BuscarExtratoResponse
+    return Results.Ok(new BuscarExtratoResponse
     {
         Saldo = saldoCliente,
         UltimasTransacoes = transacoes
-    };
-    return Results.Ok(resultado);
+    });
 });
 
+SetarCache(app);
 app.Run();
+
+void SetarCache(IHost app)
+{
+    using var conn = new NpgsqlConnection(connString);
+    conn.Open();
+
+    using var command = new NpgsqlCommand("SELECT id, limite FROM clientes", conn);
+    using var reader = command.ExecuteReader();
+
+    while (reader.Read())
+    {
+        cache.TryAdd(reader.GetInt32(0), reader.GetInt32(1));
+    }
+
+    conn.Close();
+}
 
 [JsonSerializable(typeof(BuscarExtratoResponse))]
 [JsonSerializable(typeof(CriarTransacaoResponse))]
