@@ -11,7 +11,7 @@ o objetivo é desenvolver a API mais rápida possível durante os quatro minutos
 
 # Resultado
 
-![resultado](/misc/rinha-resultado.PNG)
+![resultado](/misc/resultado.PNG)
 
 # Como executar
 ```./run.sh```
