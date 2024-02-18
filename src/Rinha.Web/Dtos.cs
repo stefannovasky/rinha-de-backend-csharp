@@ -42,12 +42,12 @@ public record CriarTransacaoResponse
 public record BuscarExtratoResponse
 {
     [JsonPropertyName("saldo")]
-    public Saldo Saldo { get; set; }
+    public SaldoResponse Saldo { get; set; }
     [JsonPropertyName("ultimas_transacoes")]
     public IList<TransacaoResponse> UltimasTransacoes { get; set; }
 }
 
-public record Saldo
+public record SaldoResponse
 {
     [JsonPropertyName("total")]
     public int Total { get; set; }

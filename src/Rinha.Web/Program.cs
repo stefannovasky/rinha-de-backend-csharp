@@ -99,7 +99,7 @@ async void SetarCache(IHost app)
 [JsonSerializable(typeof(CriarTransacaoResponse))]
 [JsonSerializable(typeof(CriarTransacaoRequest))]
 [JsonSerializable(typeof(BuscarExtratoResponse))]
-[JsonSerializable(typeof(Saldo))]
+[JsonSerializable(typeof(SaldoResponse))]
 [JsonSerializable(typeof(TransacaoResponse))]
 [JsonSerializable(typeof(IList<TransacaoResponse>))]
 [JsonSerializable(typeof(int))]
