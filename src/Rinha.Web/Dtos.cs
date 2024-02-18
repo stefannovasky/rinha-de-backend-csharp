@@ -7,44 +7,29 @@ public record Result<T>(bool Success, T Value);
 
 public record CriarTransacaoRequest
 {
+    private static readonly string[] TIPOS = ["c", "d"];
+
     public JsonElement Valor { get; set; }
     public string Tipo { get; set; }
     public string Descricao { get; set; }
 
-    public Result<TransacaoValidada?> Validar()
+    public Result<Transacao?> Validar()
     {
-        if (Valor.ValueKind != JsonValueKind.Number || Tipo == null || Descricao == null)
+        if (Valor.ValueKind == JsonValueKind.Number
+            && Valor.TryGetInt32(out int valor)
+            && valor > 0
+            && TIPOS.Contains(Tipo)
+            && !string.IsNullOrWhiteSpace(Descricao)
+            && Descricao.Length < 11)
         {
-            return new(false, null);
+            return new(true, new Transacao(valor, Tipo, Descricao));
         }
 
-        var valorEhInteiro = Valor.TryGetInt32(out int valor);
-        if (!valorEhInteiro)
-        {
-            return new(false, null);
-        }
-
-        var valorEhNegativo = valor < 1;
-        if (valorEhNegativo)
-        {
-            return new(false, null);
-        }
-
-        var tipoEhValido = Tipo == "c" || Tipo == "d";
-        if (!tipoEhValido)
-        {
-            return new(false, null);
-        }
-
-        var descricaoEhValida = Descricao.Length > 0 && Descricao.Length < 11;
-        if (!descricaoEhValida)
-        {
-            return new(false, null);
-        }
-
-        return new(true, new TransacaoValidada(valor, Tipo, Descricao));
+        return new(false, null);
     }
 }
+
+public record Transacao(int Valor, string Tipo, string Descricao);
 
 public record CriarTransacaoResponse
 {
@@ -54,18 +39,15 @@ public record CriarTransacaoResponse
     public int Saldo { get; set; }
 }
 
-public record TransacaoValidada(int Valor, string Tipo, string Descricao);
-
-
 public record BuscarExtratoResponse
 {
     [JsonPropertyName("saldo")]
-    public SaldoDto Saldo { get; set; }
+    public Saldo Saldo { get; set; }
     [JsonPropertyName("ultimas_transacoes")]
-    public IList<TransacaoDto> UltimasTransacoes { get; set; }
+    public IList<TransacaoResponse> UltimasTransacoes { get; set; }
 }
 
-public record SaldoDto
+public record Saldo
 {
     [JsonPropertyName("total")]
     public int Total { get; set; }
@@ -75,7 +57,7 @@ public record SaldoDto
     public int Limite { get; set; }
 }
 
-public record TransacaoDto
+public record TransacaoResponse
 {
     [JsonPropertyName("valor")]
     public int Valor { get; set; }

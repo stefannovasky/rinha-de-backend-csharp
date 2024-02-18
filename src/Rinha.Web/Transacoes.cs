@@ -4,7 +4,7 @@ namespace Rinha.Web;
 
 public static class Transacoes
 {
-    public static async Task<SaldoDto> BuscarSaldoCliente(NpgsqlConnection conn, int idCliente)
+    public static async Task<Saldo> BuscarSaldoCliente(NpgsqlConnection conn, int idCliente)
     {
         await using var buscarSaldoClienteCommand = new NpgsqlCommand(
             "SELECT saldo as total, now() as data_extrato FROM clientes WHERE id = @ClienteId",
@@ -13,7 +13,7 @@ public static class Transacoes
 
         await using var readerSaldoCliente = await buscarSaldoClienteCommand.ExecuteReaderAsync();
         await readerSaldoCliente.ReadAsync();
-        var saldoCliente = new SaldoDto
+        var saldoCliente = new Saldo
         {
             Total = readerSaldoCliente.GetInt32(0),
             DataExtrato = readerSaldoCliente.GetDateTime(1)
@@ -21,11 +21,11 @@ public static class Transacoes
         return saldoCliente;
     }
 
-    public static async Task<IList<TransacaoDto>> BuscarUltimasTransacoesCliente(NpgsqlConnection conn, int idCliente)
+    public static async Task<IList<TransacaoResponse>> BuscarUltimasTransacoesCliente(NpgsqlConnection conn, int idCliente)
     {
-        var transacoes = new List<TransacaoDto>();
+        var transacoes = new List<TransacaoResponse>();
 
-        using var buscarTransacoesCommand = new NpgsqlCommand(
+        await using var buscarTransacoesCommand = new NpgsqlCommand(
             "SELECT valor, tipo, descricao, realizada_em FROM transacoes WHERE cliente_id = @ClienteId ORDER BY realizada_em DESC LIMIT 10",
             conn);
         buscarTransacoesCommand.Parameters.AddWithValue("ClienteId", idCliente);
@@ -33,7 +33,7 @@ public static class Transacoes
         await using var buscarTransacoesReader = await buscarTransacoesCommand.ExecuteReaderAsync();
         while (await buscarTransacoesReader.ReadAsync())
         {
-            transacoes.Add(new TransacaoDto
+            transacoes.Add(new TransacaoResponse
             {
                 Valor = buscarTransacoesReader.GetInt32(0),
                 Tipo = buscarTransacoesReader.GetString(1),
@@ -48,11 +48,11 @@ public static class Transacoes
     public static async Task<Result<int>> CriarTransacao(
         NpgsqlConnection conn,
         int clienteId,
-        TransacaoValidada transacao)
+        Transacao transacao)
     {
         var nomeFuncaoSql = transacao.Tipo == "c" ? "credito" : "debito";
         var sql = $"SELECT * FROM {nomeFuncaoSql}(@ClienteId, @ValorTransacao, @DescricaoTransacao);";
-        using var command = new NpgsqlCommand(sql, conn);
+        await using var command = new NpgsqlCommand(sql, conn);
         command.Parameters.AddWithValue("ClienteId", clienteId);
         command.Parameters.AddWithValue("ValorTransacao", transacao.Valor);
         command.Parameters.AddWithValue("DescricaoTransacao", transacao.Descricao);

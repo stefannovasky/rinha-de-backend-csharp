@@ -4,12 +4,14 @@ using Rinha.Web;
 using System.Collections.Concurrent;
 using System.Text.Json.Serialization;
 
-var connString = Environment.GetEnvironmentVariable("POSTGRESQL_CONNECTION_STRING")!.ToString();
-
 // id_cliente -> limite_cliente
-var cache = new ConcurrentDictionary<int, int>(); // provavelmente o cache menos adequado do mundo
+var cache = new ConcurrentDictionary<int, int>();
 
 var builder = WebApplication.CreateSlimBuilder(args);
+
+builder.Services.AddNpgsqlDataSource(
+    Environment.GetEnvironmentVariable("POSTGRESQL_CONNECTION_STRING").ToString()
+);
 
 builder.Services.ConfigureHttpJsonOptions(options =>
 {
@@ -28,6 +30,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.MapPost("/clientes/{id}/transacoes", async (
+    [FromServices] NpgsqlDataSource dataSource,
     [FromRoute] int id,
     [FromBody] CriarTransacaoRequest transacao) =>
 {
@@ -36,14 +39,13 @@ app.MapPost("/clientes/{id}/transacoes", async (
         return Results.NotFound();
     }
 
+    await using var conn = await dataSource.OpenConnectionAsync();
+
     var (sucessoValidacao, transacaoValidada) = transacao.Validar();
     if (!sucessoValidacao)
     {
         return Results.UnprocessableEntity(422);
     }
-
-    using var conn = new NpgsqlConnection(connString);
-    await conn.OpenAsync();
 
     var (sucessoTransacao, novoSaldo) = await Transacoes.CriarTransacao(conn, id, transacaoValidada!);
     if (!sucessoTransacao)
@@ -54,15 +56,16 @@ app.MapPost("/clientes/{id}/transacoes", async (
     return Results.Ok(new CriarTransacaoResponse { Limite = limiteCliente, Saldo = novoSaldo });
 });
 
-app.MapGet("/clientes/{id}/extrato", async ([FromRoute] int id) =>
+app.MapGet("/clientes/{id}/extrato", async (
+    [FromServices] NpgsqlDataSource dataSource,
+    [FromRoute] int id) =>
 {
     if (!cache.TryGetValue(id, out int limiteCliente))
     {
         return Results.NotFound();
     }
 
-    using var conn = new NpgsqlConnection(connString);
-    await conn.OpenAsync();
+    await using var conn = await dataSource.OpenConnectionAsync();
 
     var saldoCliente = await Transacoes.BuscarSaldoCliente(conn, id);
     saldoCliente.Limite = limiteCliente;
@@ -78,14 +81,13 @@ app.MapGet("/clientes/{id}/extrato", async ([FromRoute] int id) =>
 SetarCache(app);
 app.Run();
 
-void SetarCache(IHost app)
+async void SetarCache(IHost app)
 {
-    using var conn = new NpgsqlConnection(connString);
+    using var conn = app.Services.GetService<NpgsqlConnection>()!;
     conn.Open();
 
     using var command = new NpgsqlCommand("SELECT id, limite FROM clientes", conn);
     using var reader = command.ExecuteReader();
-
     while (reader.Read())
     {
         cache.TryAdd(reader.GetInt32(0), reader.GetInt32(1));
@@ -94,8 +96,12 @@ void SetarCache(IHost app)
     conn.Close();
 }
 
-
-[JsonSerializable(typeof(BuscarExtratoResponse))]
 [JsonSerializable(typeof(CriarTransacaoResponse))]
 [JsonSerializable(typeof(CriarTransacaoRequest))]
+[JsonSerializable(typeof(BuscarExtratoResponse))]
+[JsonSerializable(typeof(Saldo))]
+[JsonSerializable(typeof(TransacaoResponse))]
+[JsonSerializable(typeof(IList<TransacaoResponse>))]
+[JsonSerializable(typeof(int))]
+[JsonSerializable(typeof(DateTime))]
 internal partial class AppJsonSerializerContext : JsonSerializerContext { }
