@@ -45,7 +45,7 @@ app.MapPost("/clientes/{id}/transacoes", async (
     using var conn = new NpgsqlConnection(connString);
     await conn.OpenAsync();
 
-    var (sucessoTransacao, novoSaldo) = await Transacoes.Transacionar(conn, id, transacaoValidada!);
+    var (sucessoTransacao, novoSaldo) = await Transacoes.CriarTransacao(conn, id, transacaoValidada!);
     if (!sucessoTransacao)
     {
         return Results.UnprocessableEntity();

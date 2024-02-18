@@ -3,44 +3,46 @@ using System.Text.Json.Serialization;
 
 namespace Rinha.Web;
 
+public record Result<T>(bool Success, T Value);
+
 public record CriarTransacaoRequest
 {
     public JsonElement Valor { get; set; }
     public string Tipo { get; set; }
     public string Descricao { get; set; }
 
-    public (bool, TransacaoValidada?) Validar()
+    public Result<TransacaoValidada?> Validar()
     {
         if (Valor.ValueKind != JsonValueKind.Number || Tipo == null || Descricao == null)
         {
-            return (false, null);
+            return new(false, null);
         }
 
         var valorEhInteiro = Valor.TryGetInt32(out int valor);
         if (!valorEhInteiro)
         {
-            return (false, null);
+            return new(false, null);
         }
 
         var valorEhNegativo = valor < 1;
         if (valorEhNegativo)
         {
-            return (false, null);
+            return new(false, null);
         }
 
         var tipoEhValido = Tipo == "c" || Tipo == "d";
         if (!tipoEhValido)
         {
-            return (false, null);
+            return new(false, null);
         }
 
         var descricaoEhValida = Descricao.Length > 0 && Descricao.Length < 11;
         if (!descricaoEhValida)
         {
-            return (false, null);
+            return new(false, null);
         }
 
-        return (true, new TransacaoValidada(valor, Tipo, Descricao));
+        return new(true, new TransacaoValidada(valor, Tipo, Descricao));
     }
 }
 
@@ -58,12 +60,12 @@ public record TransacaoValidada(int Valor, string Tipo, string Descricao);
 public record BuscarExtratoResponse
 {
     [JsonPropertyName("saldo")]
-    public ExtratoSaldoDto Saldo { get; set; }
+    public SaldoDto Saldo { get; set; }
     [JsonPropertyName("ultimas_transacoes")]
     public IList<TransacaoDto> UltimasTransacoes { get; set; }
 }
 
-public record ExtratoSaldoDto
+public record SaldoDto
 {
     [JsonPropertyName("total")]
     public int Total { get; set; }
@@ -84,4 +86,3 @@ public record TransacaoDto
     [JsonPropertyName("realizada_em")]
     public DateTime RealizadaEm { get; set; }
 }
-
