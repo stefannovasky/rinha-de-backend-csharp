@@ -81,7 +81,7 @@ app.MapGet("/clientes/{id}/extrato", async (
 SetarCache(app);
 app.Run();
 
-async void SetarCache(IHost app)
+void SetarCache(IHost app)
 {
     using var conn = app.Services.GetService<NpgsqlConnection>()!;
     conn.Open();
