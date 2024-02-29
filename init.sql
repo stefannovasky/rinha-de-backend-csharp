@@ -50,7 +50,6 @@ CREATE FUNCTION credito(cliente_id INTEGER, valor_transacao INTEGER, descricao_t
 RETURNS SETOF INTEGER -- retorna saldo do cliente apos a transacao
 LANGUAGE plpgsql
 AS $BODY$
-	DECLARE cliente_novo_saldo INTEGER;
 BEGIN
 	INSERT INTO transacoes (cliente_id, valor, tipo, descricao)
 	VALUES (cliente_id, valor_transacao, 'c', descricao_transacao);
