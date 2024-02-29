@@ -13,3 +13,12 @@ o objetivo é desenvolver a API mais rápida possível durante os quatro minutos
 
 ![resultado](/misc/resultado.png)
 
+# Como executar
+
+instale o gatling no diretorio HOME do seu usuario linux.
+
+iniciar a aplicacao:
+```./run.sh```
+
+iniciar teste de carga:
+```./executar-teste-local.sh```
