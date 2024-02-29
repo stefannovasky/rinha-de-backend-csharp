@@ -67,13 +67,17 @@ app.MapGet("/clientes/{id}/extrato", async (
 
     await using var conn = await dataSource.OpenConnectionAsync();
 
-    var saldoCliente = await Transacoes.BuscarSaldoCliente(conn, id);
-    saldoCliente.Limite = limiteCliente;
+    var saldoCliente = await Clientes.BuscarSaldoCliente(conn, id);
     var transacoes = await Transacoes.BuscarUltimasTransacoesCliente(conn, id);
 
     return Results.Ok(new BuscarExtratoResponse
     {
-        Saldo = saldoCliente,
+        Saldo = new SaldoResponse
+        {
+            Total = saldoCliente,
+            DataExtrato = DateTime.UtcNow,
+            Limite = limiteCliente
+        },
         UltimasTransacoes = transacoes
     });
 });

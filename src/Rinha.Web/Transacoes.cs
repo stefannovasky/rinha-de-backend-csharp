@@ -4,23 +4,6 @@ namespace Rinha.Web;
 
 public static class Transacoes
 {
-    public static async Task<SaldoResponse> BuscarSaldoCliente(NpgsqlConnection conn, int idCliente)
-    {
-        await using var buscarSaldoClienteCommand = new NpgsqlCommand(
-            "SELECT saldo as total, now() as data_extrato FROM clientes WHERE id = @ClienteId",
-            conn);
-        buscarSaldoClienteCommand.Parameters.AddWithValue("ClienteId", idCliente);
-
-        await using var readerSaldoCliente = await buscarSaldoClienteCommand.ExecuteReaderAsync();
-        await readerSaldoCliente.ReadAsync();
-        var saldoCliente = new SaldoResponse
-        {
-            Total = readerSaldoCliente.GetInt32(0),
-            DataExtrato = readerSaldoCliente.GetDateTime(1)
-        };
-        return saldoCliente;
-    }
-
     public static async Task<IList<TransacaoResponse>> BuscarUltimasTransacoesCliente(NpgsqlConnection conn, int idCliente)
     {
         var transacoes = new List<TransacaoResponse>();
