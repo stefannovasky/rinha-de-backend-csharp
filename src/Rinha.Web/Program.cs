@@ -82,22 +82,18 @@ app.MapGet("/clientes/{id}/extrato", async (
     });
 });
 
-SetarCache(app);
+await SetarCache(app);
 app.Run();
 
-void SetarCache(IHost app)
+async Task SetarCache(IHost app)
 {
     using var conn = app.Services.GetService<NpgsqlConnection>()!;
-    conn.Open();
+    await conn.OpenAsync();
 
-    using var command = new NpgsqlCommand("SELECT id, limite FROM clientes", conn);
-    using var reader = command.ExecuteReader();
-    while (reader.Read())
-    {
-        cache.TryAdd(reader.GetInt32(0), reader.GetInt32(1));
-    }
+    var clientesLimites = await Clientes.BuscarLimiteClientes(conn);
+    clientesLimites.ForEach(cl => cache.TryAdd(cl.Id, cl.Limite));
 
-    conn.Close();
+    await conn.CloseAsync();
 }
 
 [JsonSerializable(typeof(CriarTransacaoResponse))]

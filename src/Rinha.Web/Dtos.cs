@@ -68,3 +68,5 @@ public record TransacaoResponse
     [JsonPropertyName("realizada_em")]
     public DateTime RealizadaEm { get; set; }
 }
+
+public record ClienteLimite(int Id, int Limite);
